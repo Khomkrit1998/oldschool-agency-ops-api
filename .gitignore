@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Generated files
+/src/generated/prisma/
+/.prisma/
+
+# Runtime data
+data/
+tmp/
+temp/
+uploads/
+storage/
+*.pid
+*.seed
+*.pid.lock
+
+# Local database files and dumps
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sql.gz
+*.dump
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage and test output
+coverage/
+.nyc_output/
+
+# Tool caches
+.cache/
+.eslintcache
+.turbo/
+.swc/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker local volumes or overrides
+docker-data/
+docker-compose.override.yml
