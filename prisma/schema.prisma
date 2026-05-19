@@ -41,7 +41,72 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model Employee {
+  id             String   @id @default(uuid()) @db.Char(36)
+  name           String   @db.VarChar(120)
+  nickname       String   @db.VarChar(40)
+  email          String   @unique @db.VarChar(255)
+  phone          String   @db.VarChar(40)
+  employeeCode   String   @unique @map("employee_code") @db.VarChar(32)
+  position       String   @db.VarChar(120)
+  team           String   @db.VarChar(80)
+  manager        String   @db.VarChar(120)
+  status         EmployeeStatus @default(PROBATION)
+  employmentType EmploymentType @map("employment_type")
+  utilization    Int      @default(0)
+  location       String   @db.VarChar(80)
+  startDate      DateTime @map("start_date") @db.Date
+  lastCheckIn    String?  @map("last_check_in") @db.VarChar(80)
+  createdById    String?  @map("created_by_id") @db.Char(36)
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  probationReviews EmployeeProbationReview[]
+
+  @@index([team])
+  @@index([status])
+  @@index([createdById])
+  @@map("employees")
+}
+
+model EmployeeProbationReview {
+  id         String   @id @default(uuid()) @db.Char(36)
+  employeeId String   @map("employee_id") @db.Char(36)
+  checkpoint Int
+  status     ProbationReviewStatus @default(PENDING)
+  score      Int?
+  reviewDate DateTime @map("review_date") @db.Date
+  note       String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, checkpoint])
+  @@index([reviewDate])
+  @@map("employee_probation_reviews")
+}
+
 enum Role {
   ADMIN
   USER
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  PROBATION
+  LEAVE
+  INACTIVE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum ProbationReviewStatus {
+  PASSED
+  PENDING
+  REVIEW
+  FAILED
 }
