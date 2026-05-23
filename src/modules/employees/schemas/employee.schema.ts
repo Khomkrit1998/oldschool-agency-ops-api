@@ -64,6 +64,76 @@
  *               $ref: '#/components/schemas/ProbationNoteInput'
  *             day90:
  *               $ref: '#/components/schemas/ProbationNoteInput'
+ *     UpdateEmployeeRequest:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Maya Chen"
+ *         nickname:
+ *           type: string
+ *           example: "May"
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: "maya@oldschool.agency"
+ *         phone:
+ *           type: string
+ *           example: "+66 81 234 5678"
+ *         position:
+ *           type: string
+ *           example: "Senior Strategy Lead"
+ *         team:
+ *           type: string
+ *           example: "Strategy"
+ *         manager:
+ *           type: string
+ *           example: "Nora Bailey"
+ *         startDate:
+ *           type: string
+ *           format: date
+ *           example: "2026-05-19"
+ *         employmentType:
+ *           type: string
+ *           enum: [Full-time, Part-time, Contract]
+ *           example: "Full-time"
+ *         location:
+ *           type: string
+ *           example: "Bangkok"
+ *         status:
+ *           type: string
+ *           enum: [ใช้งาน, ทดลองงาน, ลา, ไม่ใช้งาน]
+ *           example: "ใช้งาน"
+ *         utilization:
+ *           type: integer
+ *           minimum: 0
+ *           maximum: 100
+ *           example: 72
+ *         lastCheckIn:
+ *           type: string
+ *           nullable: true
+ *           example: "Today 09:30"
+ *     UpdateEmployeeProbationReviewRequest:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [ผ่าน, รอดำเนินการ, ต้องรีวิว, ไม่ผ่าน]
+ *           example: "ผ่าน"
+ *         score:
+ *           type: integer
+ *           nullable: true
+ *           minimum: 0
+ *           maximum: 100
+ *           example: 86
+ *         reviewDate:
+ *           type: string
+ *           format: date
+ *           example: "2026-06-18"
+ *         note:
+ *           type: string
+ *           nullable: true
+ *           example: "Strong delivery ownership and clear communication."
  *     EmployeeProbationReview:
  *       type: object
  *       properties:

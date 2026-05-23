@@ -13,6 +13,29 @@ import "../schemas/employee.schema";
  *     tags: [Employees]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by name, nickname, email, phone, employee code, position, team, or manager.
+ *       - in: query
+ *         name: team
+ *         schema:
+ *           type: string
+ *         description: Filter by team.
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ใช้งาน, ทดลองงาน, ลา, ไม่ใช้งาน]
+ *         description: Filter by employee status.
+ *       - in: query
+ *         name: employmentType
+ *         schema:
+ *           type: string
+ *           enum: [Full-time, Part-time, Contract]
+ *         description: Filter by employment type.
  *     responses:
  *       200:
  *         description: Employees fetched successfully.
@@ -162,6 +185,82 @@ import "../schemas/employee.schema";
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/EmployeeResponse'
+ *       401:
+ *         description: Authentication token is missing, invalid, or expired.
+ *       404:
+ *         description: Employee not found.
+ *
+ *   patch:
+ *     summary: Update employee
+ *     description: Updates employee profile, work information, status, utilization, or check-in metadata.
+ *     tags: [Employees]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Employee ID.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateEmployeeRequest'
+ *     responses:
+ *       200:
+ *         description: Employee updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EmployeeResponse'
+ *       400:
+ *         description: Validation failed.
+ *       401:
+ *         description: Authentication token is missing, invalid, or expired.
+ *       404:
+ *         description: Employee not found.
+ *       409:
+ *         description: Employee email is already in use.
+ *
+ * /api/v1/employees/{id}/probation/{checkpoint}:
+ *   patch:
+ *     summary: Update employee probation review
+ *     description: Updates one probation checkpoint review for 30, 60, or 90 days.
+ *     tags: [Employees]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Employee ID.
+ *       - in: path
+ *         name: checkpoint
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           enum: [30, 60, 90]
+ *         description: Probation checkpoint day.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateEmployeeProbationReviewRequest'
+ *     responses:
+ *       200:
+ *         description: Employee probation review updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EmployeeResponse'
+ *       400:
+ *         description: Validation failed.
  *       401:
  *         description: Authentication token is missing, invalid, or expired.
  *       404:

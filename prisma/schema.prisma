@@ -22,6 +22,7 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   refreshTokens RefreshToken[]
+  attendanceCheckIns AttendanceCheckIn[]
 
   @@map("users")
 }
@@ -62,11 +63,47 @@ model Employee {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   probationReviews EmployeeProbationReview[]
+  attendanceCheckIns AttendanceCheckIn[]
 
   @@index([team])
   @@index([status])
   @@index([createdById])
   @@map("employees")
+}
+
+model WorkMode {
+  id        String   @id @default(uuid()) @db.Char(36)
+  name      String   @unique @db.VarChar(80)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  attendanceCheckIns AttendanceCheckIn[]
+
+  @@index([isActive, sortOrder])
+  @@map("work_modes")
+}
+
+model AttendanceCheckIn {
+  id          String   @id @default(uuid()) @db.Char(36)
+  employeeId  String   @map("employee_id") @db.Char(36)
+  userId      String   @map("user_id") @db.Char(36)
+  date        DateTime @db.Date
+  workModeId  String   @map("work_mode_id") @db.Char(36)
+  checkInAt   DateTime @map("check_in_at")
+  note        String?  @db.Text
+  location    String   @db.VarChar(160)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workMode    WorkMode @relation(fields: [workModeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([userId])
+  @@index([workModeId])
+  @@index([date])
+  @@map("attendance_check_ins")
 }
 
 model EmployeeProbationReview {

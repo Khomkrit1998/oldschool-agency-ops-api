@@ -3,11 +3,17 @@ import type {
   EmployeeProbationReview,
   EmployeeStatus,
   EmploymentType,
+  Prisma,
   ProbationReviewStatus,
 } from "@prisma/client";
 import { AppError } from "../../../shared/errors/app-error";
 import { employeeRepository } from "../repositories/employee.repository";
-import type { CreateEmployeeInput } from "../validations/employee.validation";
+import type {
+  CreateEmployeeInput,
+  ListEmployeesQuery,
+  UpdateEmployeeInput,
+  UpdateEmployeeProbationReviewInput,
+} from "../validations/employee.validation";
 
 type EmployeeWithReviews = Employee & {
   probationReviews: EmployeeProbationReview[];
@@ -21,11 +27,24 @@ const employmentTypeMap: Record<CreateEmployeeInput["employmentType"], Employmen
   Contract: "CONTRACT",
 };
 
+const listEmploymentTypeMap: Record<NonNullable<ListEmployeesQuery["employmentType"]>, EmploymentType> = {
+  "Full-time": "FULL_TIME",
+  "Part-time": "PART_TIME",
+  Contract: "CONTRACT",
+};
+
 const employeeStatusLabel: Record<EmployeeStatus, string> = {
   ACTIVE: "ใช้งาน",
   PROBATION: "ทดลองงาน",
   LEAVE: "ลา",
   INACTIVE: "ไม่ใช้งาน",
+};
+
+const employeeStatusMap: Record<NonNullable<UpdateEmployeeInput["status"]>, EmployeeStatus> = {
+  ใช้งาน: "ACTIVE",
+  ทดลองงาน: "PROBATION",
+  ลา: "LEAVE",
+  ไม่ใช้งาน: "INACTIVE",
 };
 
 const employmentTypeLabel: Record<EmploymentType, string> = {
@@ -39,6 +58,13 @@ const probationStatusLabel: Record<ProbationReviewStatus, string> = {
   PENDING: "รอดำเนินการ",
   REVIEW: "ต้องรีวิว",
   FAILED: "ไม่ผ่าน",
+};
+
+const probationStatusMap: Record<NonNullable<UpdateEmployeeProbationReviewInput["status"]>, ProbationReviewStatus> = {
+  ผ่าน: "PASSED",
+  รอดำเนินการ: "PENDING",
+  ต้องรีวิว: "REVIEW",
+  ไม่ผ่าน: "FAILED",
 };
 
 const teamCodeMap: Record<string, string> = {
@@ -219,9 +245,41 @@ function getRecentActivity(employees: SafeEmployee[]) {
     .slice(0, 8);
 }
 
+function buildEmployeeWhere(query: ListEmployeesQuery) {
+  const search = query.search?.trim();
+  const where: Prisma.EmployeeWhereInput = {};
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search } },
+      { nickname: { contains: search } },
+      { email: { contains: search } },
+      { phone: { contains: search } },
+      { employeeCode: { contains: search } },
+      { position: { contains: search } },
+      { team: { contains: search } },
+      { manager: { contains: search } },
+    ];
+  }
+
+  if (query.team) {
+    where.team = query.team;
+  }
+
+  if (query.status) {
+    where.status = employeeStatusMap[query.status];
+  }
+
+  if (query.employmentType) {
+    where.employmentType = listEmploymentTypeMap[query.employmentType];
+  }
+
+  return where;
+}
+
 export const employeeService = {
-  async list() {
-    const employees = await employeeRepository.findMany();
+  async list(query: ListEmployeesQuery = {}) {
+    const employees = await employeeRepository.findMany(buildEmployeeWhere(query));
 
     return {
       employees: employees.map(toSafeEmployee),
@@ -351,6 +409,61 @@ export const employeeService = {
 
     return {
       employee: toSafeEmployee(employee),
+    };
+  },
+
+  async update(id: string, input: UpdateEmployeeInput) {
+    const employee = await employeeRepository.findById(id);
+
+    if (!employee) {
+      throw new AppError(404, "Employee not found.");
+    }
+
+    if (input.email) {
+      const existingEmail = await employeeRepository.findByEmail(input.email);
+
+      if (existingEmail && existingEmail.id !== id) {
+        throw new AppError(409, "Employee email is already in use.");
+      }
+    }
+
+    const updatedEmployee = await employeeRepository.update(id, {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.nickname !== undefined ? { nickname: input.nickname } : {}),
+      ...(input.email !== undefined ? { email: input.email } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone } : {}),
+      ...(input.position !== undefined ? { position: input.position } : {}),
+      ...(input.team !== undefined ? { team: input.team } : {}),
+      ...(input.manager !== undefined ? { manager: input.manager } : {}),
+      ...(input.startDate !== undefined ? { startDate: parseDateOnly(input.startDate) } : {}),
+      ...(input.employmentType !== undefined ? { employmentType: employmentTypeMap[input.employmentType] } : {}),
+      ...(input.location !== undefined ? { location: input.location } : {}),
+      ...(input.status !== undefined ? { status: employeeStatusMap[input.status] } : {}),
+      ...(input.utilization !== undefined ? { utilization: input.utilization } : {}),
+      ...(input.lastCheckIn !== undefined ? { lastCheckIn: input.lastCheckIn || null } : {}),
+    });
+
+    return {
+      employee: toSafeEmployee(updatedEmployee),
+    };
+  },
+
+  async updateProbationReview(id: string, checkpoint: number, input: UpdateEmployeeProbationReviewInput) {
+    const employee = await employeeRepository.findById(id);
+
+    if (!employee) {
+      throw new AppError(404, "Employee not found.");
+    }
+
+    const updatedReview = await employeeRepository.updateProbationReview(id, checkpoint, {
+      ...(input.status !== undefined ? { status: probationStatusMap[input.status] } : {}),
+      ...(input.score !== undefined ? { score: input.score } : {}),
+      ...(input.reviewDate !== undefined ? { reviewDate: parseDateOnly(input.reviewDate) } : {}),
+      ...(input.note !== undefined ? { note: input.note || null } : {}),
+    });
+
+    return {
+      employee: toSafeEmployee(updatedReview.employee),
     };
   },
 };

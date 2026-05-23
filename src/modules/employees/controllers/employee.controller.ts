@@ -2,11 +2,16 @@ import type { Request, Response } from "express";
 import { AppError } from "../../../shared/errors/app-error";
 import { sendSuccess } from "../../../shared/utils/api-response";
 import { employeeService } from "../services/employee.service";
-import type { CreateEmployeeInput } from "../validations/employee.validation";
+import type {
+  CreateEmployeeInput,
+  ListEmployeesQuery,
+  UpdateEmployeeInput,
+  UpdateEmployeeProbationReviewInput,
+} from "../validations/employee.validation";
 
 export const employeeController = {
-  async list(_req: Request, res: Response) {
-    const data = await employeeService.list();
+  async list(req: Request, res: Response) {
+    const data = await employeeService.list(req.query as ListEmployeesQuery);
     return sendSuccess(res, data, "Employees fetched successfully.");
   },
 
@@ -44,5 +49,31 @@ export const employeeController = {
   async create(req: Request<unknown, unknown, CreateEmployeeInput>, res: Response) {
     const data = await employeeService.create(req.body, req.user?.id);
     return sendSuccess(res, data, "Employee created successfully.", 201);
+  },
+
+  async update(req: Request, res: Response) {
+    const id = req.params.id;
+
+    if (typeof id !== "string") {
+      throw new AppError(400, "Employee ID is invalid.");
+    }
+
+    const data = await employeeService.update(id, req.body as UpdateEmployeeInput);
+    return sendSuccess(res, data, "Employee updated successfully.");
+  },
+
+  async updateProbationReview(req: Request, res: Response) {
+    const id = req.params.id;
+
+    if (typeof id !== "string") {
+      throw new AppError(400, "Employee ID is invalid.");
+    }
+
+    const data = await employeeService.updateProbationReview(
+      id,
+      Number(req.params.checkpoint),
+      req.body as UpdateEmployeeProbationReviewInput,
+    );
+    return sendSuccess(res, data, "Employee probation review updated successfully.");
   },
 };

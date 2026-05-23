@@ -15,12 +15,21 @@ export function validateRequest(schema: ZodType) {
       query: req.query,
     }) as RequestParts;
 
-    if (data.body) {
+    if (data.body !== undefined) {
       req.body = data.body;
     }
 
-    if (data.params) {
+    if (data.params !== undefined) {
       req.params = data.params as typeof req.params;
+    }
+
+    if (data.query !== undefined) {
+      Object.defineProperty(req, "query", {
+        value: data.query as typeof req.query,
+        configurable: true,
+        enumerable: true,
+        writable: true,
+      });
     }
 
     return next();

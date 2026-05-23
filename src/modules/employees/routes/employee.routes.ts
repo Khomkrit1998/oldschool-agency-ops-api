@@ -3,13 +3,19 @@ import { authenticate } from "../../../shared/middlewares/authenticate";
 import { validateRequest } from "../../../shared/middlewares/validate-request";
 import { asyncHandler } from "../../../shared/utils/async-handler";
 import { employeeController } from "../controllers/employee.controller";
-import { createEmployeeValidation } from "../validations/employee.validation";
+import {
+  createEmployeeValidation,
+  listEmployeesValidation,
+  updateEmployeeProbationReviewValidation,
+  updateEmployeeValidation,
+} from "../validations/employee.validation";
 
 const router = Router();
 
 router.get(
   "/",
   authenticate,
+  validateRequest(listEmployeesValidation),
   asyncHandler(employeeController.list),
 );
 
@@ -48,6 +54,20 @@ router.post(
   authenticate,
   validateRequest(createEmployeeValidation),
   asyncHandler(employeeController.create),
+);
+
+router.patch(
+  "/:id",
+  authenticate,
+  validateRequest(updateEmployeeValidation),
+  asyncHandler(employeeController.update),
+);
+
+router.patch(
+  "/:id/probation/:checkpoint",
+  authenticate,
+  validateRequest(updateEmployeeProbationReviewValidation),
+  asyncHandler(employeeController.updateProbationReview),
 );
 
 export default router;
