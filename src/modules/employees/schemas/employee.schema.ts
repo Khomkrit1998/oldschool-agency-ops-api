@@ -64,6 +64,27 @@
  *               $ref: '#/components/schemas/ProbationNoteInput'
  *             day90:
  *               $ref: '#/components/schemas/ProbationNoteInput'
+ *         auth:
+ *           type: object
+ *           properties:
+ *             createAccount:
+ *               type: boolean
+ *               example: true
+ *             temporaryPassword:
+ *               type: string
+ *               minLength: 8
+ *               example: "Welcome123!"
+ *     EmployeeAuthAccount:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [created, linked, skipped]
+ *           example: created
+ *         userId:
+ *           type: string
+ *           nullable: true
+ *           example: "6b17f1b5-2d5f-41db-a0be-62e5df45ddaa"
  *     UpdateEmployeeRequest:
  *       type: object
  *       properties:
@@ -230,6 +251,8 @@
  *               properties:
  *                 employee:
  *                   $ref: '#/components/schemas/Employee'
+ *                 authAccount:
+ *                   $ref: '#/components/schemas/EmployeeAuthAccount'
  *     EmployeeResponse:
  *       allOf:
  *         - $ref: '#/components/schemas/SuccessResponse'

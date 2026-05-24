@@ -6,8 +6,12 @@ import type {
   Prisma,
   ProbationReviewStatus,
 } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { prisma } from "../../../database/prisma";
 import { AppError } from "../../../shared/errors/app-error";
+import { defaultUserPermissions } from "../../../shared/permissions";
 import { employeeRepository } from "../repositories/employee.repository";
+import { userRepository } from "../../users/repositories/user.repository";
 import type {
   CreateEmployeeInput,
   ListEmployeesQuery,
@@ -26,6 +30,8 @@ const employmentTypeMap: Record<CreateEmployeeInput["employmentType"], Employmen
   "Part-time": "PART_TIME",
   Contract: "CONTRACT",
 };
+
+type EmployeeCreateTx = Prisma.TransactionClient;
 
 const listEmploymentTypeMap: Record<NonNullable<ListEmployeesQuery["employmentType"]>, EmploymentType> = {
   "Full-time": "FULL_TIME",
@@ -369,46 +375,81 @@ export const employeeService = {
       throw new AppError(409, "Employee email is already in use.");
     }
 
+    const createAuthAccount = Boolean(input.auth?.createAccount);
+    const existingUser = createAuthAccount ? await userRepository.findByEmail(input.email) : null;
+    const passwordHash = createAuthAccount && !existingUser && input.auth?.temporaryPassword
+      ? await bcrypt.hash(input.auth.temporaryPassword, 12)
+      : null;
     const startDate = parseDateOnly(input.startDate);
     const employeeCode = await generateEmployeeCode(input.team);
-    const employee = await employeeRepository.create({
-      name: input.name,
-      nickname: input.nickname,
-      email: input.email,
-      phone: input.phone,
-      employeeCode,
-      position: input.position,
-      team: input.team,
-      manager: input.manager,
-      status: "PROBATION",
-      employmentType: employmentTypeMap[input.employmentType],
-      location: input.location,
-      startDate,
-      lastCheckIn: null,
-      createdById,
-      probationReviews: {
-        create: [
-          {
-            checkpoint: 30,
-            reviewDate: addDays(startDate, 30),
-            note: input.probation.day30.note || null,
+    const result = await prisma.$transaction(async (tx: EmployeeCreateTx) => {
+      const authUser = createAuthAccount
+        ? existingUser ?? await tx.user.create({
+          data: {
+            name: input.name,
+            email: input.email,
+            passwordHash: passwordHash!,
+            role: "USER",
+            permissions: defaultUserPermissions,
           },
-          {
-            checkpoint: 60,
-            reviewDate: addDays(startDate, 60),
-            note: input.probation.day60.note || null,
+        })
+        : null;
+
+      const employee = await tx.employee.create({
+        data: {
+          name: input.name,
+          nickname: input.nickname,
+          email: input.email,
+          phone: input.phone,
+          employeeCode,
+          position: input.position,
+          team: input.team,
+          manager: input.manager,
+          status: "PROBATION",
+          employmentType: employmentTypeMap[input.employmentType],
+          location: input.location,
+          startDate,
+          lastCheckIn: null,
+          createdById,
+          probationReviews: {
+            create: [
+              {
+                checkpoint: 30,
+                reviewDate: addDays(startDate, 30),
+                note: input.probation.day30.note || null,
+              },
+              {
+                checkpoint: 60,
+                reviewDate: addDays(startDate, 60),
+                note: input.probation.day60.note || null,
+              },
+              {
+                checkpoint: 90,
+                reviewDate: addDays(startDate, 90),
+                note: input.probation.day90.note || null,
+              },
+            ],
           },
-          {
-            checkpoint: 90,
-            reviewDate: addDays(startDate, 90),
-            note: input.probation.day90.note || null,
+        },
+        include: {
+          probationReviews: {
+            orderBy: { checkpoint: "asc" },
           },
-        ],
-      },
+        },
+      });
+
+      return {
+        employee,
+        authAccount: {
+          status: createAuthAccount ? (existingUser ? "linked" : "created") : "skipped",
+          userId: authUser?.id ?? null,
+        },
+      };
     });
 
     return {
-      employee: toSafeEmployee(employee),
+      employee: toSafeEmployee(result.employee),
+      authAccount: result.authAccount,
     };
   },
 

@@ -78,6 +78,9 @@ import "../schemas/employee.schema";
  *                     note: "Review client-facing readiness."
  *                   day90:
  *                     note: "Final confirmation checkpoint."
+ *                 auth:
+ *                   createAccount: true
+ *                   temporaryPassword: "Welcome123!"
  *     responses:
  *       201:
  *         description: Employee created successfully.

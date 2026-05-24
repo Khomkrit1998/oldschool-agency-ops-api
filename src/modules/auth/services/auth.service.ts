@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { env } from "../../../config/env";
 import { AppError } from "../../../shared/errors/app-error";
+import { defaultUserPermissions } from "../../../shared/permissions";
 import { userRepository } from "../../users/repositories/user.repository";
 import { toSafeUser } from "../../users/services/user.service";
 import { refreshTokenRepository } from "../repositories/refresh-token.repository";
@@ -49,6 +50,7 @@ export const authService = {
       name: input.name,
       email: input.email,
       passwordHash,
+      permissions: defaultUserPermissions,
     });
     const safeUser = toSafeUser(user);
     const tokens = await issueTokenPair(safeUser);

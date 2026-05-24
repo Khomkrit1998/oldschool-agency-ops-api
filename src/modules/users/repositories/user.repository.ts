@@ -8,9 +8,22 @@ export type CreateUserData = {
   email: string;
   passwordHash: string;
   role?: Role;
+  permissions?: string[];
 };
 
 export const userRepository = {
+  findMany() {
+    return prisma.user.findMany({
+      where: {
+        deletedAt: null,
+      },
+      orderBy: [
+        { role: "asc" },
+        { name: "asc" },
+      ],
+    });
+  },
+
   findByEmail(email: string) {
     return prisma.user.findFirst({
       where: {

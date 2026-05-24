@@ -42,6 +42,22 @@ export const createEmployeeValidation = z.object({
       day60: { note: "" },
       day90: { note: "" },
     }),
+    auth: z.object({
+      createAccount: z.boolean().default(false),
+      temporaryPassword: z.string().optional(),
+    }).optional(),
+  }).superRefine((data, context) => {
+    if (!data.auth?.createAccount) {
+      return;
+    }
+
+    if (!data.auth.temporaryPassword || data.auth.temporaryPassword.length < 8) {
+      context.addIssue({
+        code: "custom",
+        path: ["auth", "temporaryPassword"],
+        message: "Temporary password must be at least 8 characters.",
+      });
+    }
   }),
 });
 
